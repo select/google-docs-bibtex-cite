@@ -22,6 +22,7 @@ function onInstall() {
 function onOpen() {
   var menuEntries = [
     {name: "Update Citation Index", functionName: "updateIndex"},
+    {name: "Clear Citation Index", functionName: "indexToLatex"},
     {name: "Insert Complete Index", functionName: "completeIndex"},
     {name: "Configure BibTeX-cite", functionName: "configure"}
   ];
@@ -57,41 +58,15 @@ function completeIndex(){
   }
 }
 //========================================================
-// search for \cite{foobar} and replace it with [1] 
+// search for \cite{foobar} and replace it with [1]
 // create a Bibliography heading and a table with the bibligraphy corresponding to [1]
 function updateIndex(){
   var data = getBibtexAndDoc();
   var body = data.body;
   var bibtex_dict = data.bibtex_dict;
-  if (body!=undefined) { 
-    //--------------------------------------
-    var bibliography
-    //find if Biblography paragraph was added
-    var found_bib_head = false;
-    for (var i = 0; i<body.getNumChildren(); ++i){
-      var curChild = body.getChild(i);
-      if ((curChild.getType() == DocumentApp.ElementType.PARAGRAPH)&&(curChild.getText()=="Bibliography")) {
-        found_bib_head = true;
-        if (body.getChild(i+1).getType() == DocumentApp.ElementType.TABLE){
-          bibliography = body.getChild(i+1);
-          //--------------------------------------
-          //iterate through table and reverse citation linking
-          for (var r=0; r<bibliography.getNumRows(); ++r){
-            var row = bibliography.getRow(r);
-            var needle =row.getCell(0).getText();
-            needle = needle.substring(2,needle.length-1);
-            var replace =row.getCell(1).getText();
-            replace = replace.substring(1,replace.length);
-            body.replaceText('\\['+needle+'\\]', '\\cite{'+replace+'}');//replace [1] with \cite{foo}
-            //body.appendParagraph(needle+" -> "+'\\cite{'+replace+'}');//DEBUG
-          }
-          body.removeChild(bibliography);//delete old bib table
-        } 
-        bibliography = body.appendTable().setBorderColor('#FFFFFF');//create new bib table
-        break;
-      }
-    }
-    if (!found_bib_head){
+  if (body!==undefined) {
+    var bibliography = indexToLatex();
+    if (bibliography == undefined){
       //append citation index section
       var section = body.appendParagraph("Bibliography");
       section.setHeading(DocumentApp.ParagraphHeading.HEADING1);
@@ -101,7 +76,7 @@ function updateIndex(){
     var counter = 1;//counter for [1] [2] replacements
     var result = null;
     do{
-      result = body.findText("\\\\cite\\{[^\\}]+\\}", result);//this does not seem to hit every citations???? 
+      result = body.findText("\\\\cite\\{[^\\}]+\\}", result);//this does not seem to hit every citations????
       if (!result) break;
       var startOffset = result.getStartOffset();
       var endOffset = result.getEndOffsetInclusive();
@@ -126,15 +101,50 @@ function updateIndex(){
           // 'AUTHORS, "<strong>TITLE</strong>", <em>JOURNAL</em>, YEAR<br />';
           var citation_paragraph = cell.appendParagraph(bibtexobj.authors+', ').setFontSize(10.0).setForegroundColor('#000000');
           citation_paragraph.appendText(bibtexobj.title).setBold(true);
-          citation_paragraph.appendText(', ').setBold(false);
-          citation_paragraph.appendText(bibtexobj.journal).setItalic(true);
-          citation_paragraph.appendText(', '+bibtexobj.year+' ').setItalic(false);
+          if (bibtexobj.journal != ''){
+            citation_paragraph.appendText(', ').setBold(false);
+            citation_paragraph.appendText(bibtexobj.journal).setItalic(true);
+          }
+          if (bibtexobj.year != '') citation_paragraph.appendText(', '+bibtexobj.year+' ').setItalic(false).setBold(false);
           //-----------------
           ++counter;
         }
       }
     } while (result);
   }
+}
+function indexToLatex(){
+  var data = getBibtexAndDoc();
+  var body = data.body;
+  var bibtex_dict = data.bibtex_dict;
+  var bibliography;
+  if (body!==undefined) {
+    //--------------------------------------
+    //find if Biblography paragraph was added
+    for (var i = 0; i<body.getNumChildren(); ++i){
+      var curChild = body.getChild(i);
+      if ((curChild.getType() == DocumentApp.ElementType.PARAGRAPH)&&(curChild.getText()=="Bibliography")) {
+        if (body.getChild(i+1).getType() == DocumentApp.ElementType.TABLE){
+          bibliography = body.getChild(i+1);
+          //--------------------------------------
+          //iterate through table and reverse citation linking
+          for (var r=0; r<bibliography.getNumRows(); ++r){
+            var row = bibliography.getRow(r);
+            var needle =row.getCell(0).getText();
+            needle = needle.substring(2,needle.length-1);
+            var replace =row.getCell(1).getText();
+            replace = replace.substring(1,replace.length);
+            body.replaceText('\\['+needle+'\\]', '\\cite{'+replace+'}');//replace [1] with \cite{foo}
+            //body.appendParagraph(needle+" -> "+'\\cite{'+replace+'}');//DEBUG
+          }
+          body.removeChild(bibliography);//delete old bib table
+        }
+        bibliography = body.appendTable().setBorderColor('#FFFFFF');//create new bib table
+        break;
+      }
+    }
+  }
+  return bibliography;
 }
 //========================================================
 // get a Document body instance and bibtex citation dictionary
@@ -2218,7 +2228,8 @@ BibTex.prototype = {
           authors = entry['author'];
         }
       }
-      
+      return {title: title, journal: journal, year: year, authors: authors}
+      /*
       if ((''!=title) || (''!=journal) || (''!=year) || (''!=authors)) {
         return {title: title, journal: journal, year: year, authors: authors}
           } else {
@@ -2226,5 +2237,6 @@ BibTex.prototype = {
           }
       
       return {};
+      */
     }
 };
