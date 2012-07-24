@@ -9,6 +9,10 @@ Open any google spreadsheet (or create a new empty spreadsheet)
 
 Install script by using the menu Tools > Script Editor ...
 
+In the editor menu go to Resource > Current script's triggers > Add new trigger
+
+Choose: onInstall, From spreadsheet, On open (this should be the default) and save
+
 Reload the spreadsheet, BibTeX-cite menu should appear
 
 Use the menu BibTeX-cite > Configure BibTeX-Cite
