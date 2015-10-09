@@ -165,7 +165,7 @@ function getBibtexAndDoc(){
   //-------------  
   //go through doc list to find all documents ending with .bib
   //TODO only iterate through "Documents"
-  var doclist = DocsList.getAllFiles();
+  var doclist = DriveApp.getAllFiles();
   var bibtex_doc;
   var found = false;
   for(var i=0; i<doclist.length; ++i){
@@ -191,7 +191,7 @@ function getBibtexAndDoc(){
   //-------------  
   //loop through all documents to find document with title Citation Test, this is just the dev test document
   var docid;
-  var doclist = DocsList.getAllFiles();
+  var doclist = DriveApp.getAllFiles();
   for(var i=0; i<doclist.length; ++i){
     var dfile = doclist[i];
     if (dfile.getId() in doc_file_ids){
@@ -231,7 +231,7 @@ function configure(){
   form_select.add(hoizontal_panel);
   
   var choose_bib = app.createVerticalPanel().setId('choose');
-  var doclist = DocsList.getAllFiles();
+  var doclist = DriveApp.getAllFiles();
   for(var i=0; i<doclist.length; ++i){
     var dfile = doclist[i];
     if (dfile.getName().substring(dfile.getName().length-4,dfile.getName().length)=='.bib'){
@@ -241,7 +241,7 @@ function configure(){
       
     }
   }
-  doclist = DocsList.getFilesByType("document");
+  doclist = DriveApp.getFilesByType("document");
   var choose_doc = app.createVerticalPanel();
   for(var i=0; i<doclist.length; ++i){
     var dfile = doclist[i];
@@ -299,7 +299,7 @@ function saveConfiguration(e) {
 function doPost(e){
   var app = UiApp.getActiveApplication();
   //-------------  
-  var doclist = DocsList.getAllFiles();
+  var doclist = DriveApp.getAllFiles();
   var found = false;
   var bibtex_doc;
   for(var i=0; i<doclist.length; ++i){
@@ -312,7 +312,7 @@ function doPost(e){
   }
   //-------------  
   if (! found){
-    var bibtex_doc = DocsList.createFile(e.parameter.bibtex);
+    var bibtex_doc = DriveApp.createFile(e.parameter.bibtex);
   }
   return app
 }
